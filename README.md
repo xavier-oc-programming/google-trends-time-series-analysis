@@ -48,13 +48,19 @@ data/ue_benefits_search_vs_ue_rate_2004_20.csv
 
 DataFrames
     │
-    ├── pd.to_datetime()         ──► parse MONTH / DATE columns
-    ├── .isnull() / .dropna()   ──► remove 1 missing BTC price row
+    │  ── [Parsing] ──────────────────────────────────────────
+    ├── pd.to_datetime()          →  convert MONTH / DATE strings to datetime
     │
-    ├── .resample('ME').last()  ──► daily BTC price → monthly
+    │  ── [Cleaning] ─────────────────────────────────────────
+    ├── .isnull() / .dropna()    →  remove 1 missing row from BTC price data
     │
-    ├── .rolling(window=6).mean() ──► 6-month search trend average
+    │  ── [Resampling] ───────────────────────────────────────
+    ├── .resample('ME').last()   →  collapse daily BTC price to month-end
     │
+    │  ── [Smoothing] ────────────────────────────────────────
+    ├── .rolling(window=6).mean() →  6-month average to reduce search noise
+    │
+    │  ── [Visualisation] ────────────────────────────────────
     └── matplotlib (twinx)
             ├── Tesla stock price  vs  Tesla search volume
             ├── Bitcoin monthly price  vs  Bitcoin news search
