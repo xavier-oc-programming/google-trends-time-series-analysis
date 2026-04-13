@@ -40,13 +40,14 @@ Open `practice/A_Google_Trends_Analysis.ipynb` first — it contains the full an
 ## 2. Analysis flow
 
 ```
-data/tesla_search_trend_vs_price.csv  ─────────────────────┐
-data/bitcoin_search_trend.csv          ──── pd.read_csv()   │
-data/daily_bitcoin_price.csv           ──── pd.read_csv()   │──► DataFrames
-data/ue_benefits_search_vs_ue_rate_2004_19.csv ─────────────┘
-data/ue_benefits_search_vs_ue_rate_2004_20.csv
-
-DataFrames
+pipeline
+    │
+    │  ── [Ingestion] ────────────────────────────────────────
+    ├── pd.read_csv()  →  tesla_search_trend_vs_price.csv          →  df_tesla
+    ├── pd.read_csv()  →  bitcoin_search_trend.csv                 →  df_btc_search
+    ├── pd.read_csv()  →  daily_bitcoin_price.csv                  →  df_btc_price
+    ├── pd.read_csv()  →  ue_benefits_search_vs_ue_rate_2004_19.csv  →  df_unemployment
+    ├── pd.read_csv()  →  ue_benefits_search_vs_ue_rate_2004_20.csv  →  df_unemployment_2020
     │
     │  ── [Parsing] ──────────────────────────────────────────
     ├── pd.to_datetime()          →  convert MONTH / DATE strings to datetime
