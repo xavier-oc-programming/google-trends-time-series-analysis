@@ -163,7 +163,9 @@ Charts are saved to `plots/` at 150 dpi when the analysis notebook is run.
 
 | File | Description |
 |---|---|
-| `tesla_price_vs_search.png` | Dual-axis: TSLA closing price (red) vs Google search volume (blue), 2010–2021 |
+| `tesla_price_vs_search_v1.png` | Dual-axis: TSLA price vs search, initial layout (no colour) |
+| `tesla_price_vs_search_v2.png` | Dual-axis: TSLA price vs search, colour-coded (red/blue) |
+| `tesla_price_vs_search.png` | Dual-axis: TSLA closing price (red) vs Google search volume (blue), final styled, 2010–2021 |
 | `bitcoin_price_vs_search.png` | Dual-axis: BTC month-end price (orange dashed) vs Bitcoin news search (blue circles), 2014–2020 |
 | `unemployment_search_vs_rate_2004_19.png` | Dual-axis: U/E rate (purple dashed) vs "unemployment benefits" search (blue), with grey grid, 2004–2019 |
 | `unemployment_rolling_avg.png` | Dual-axis: U/E rate (red) vs 6-month rolling average search (steel blue dashed), 2004–2019 |
