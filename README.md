@@ -1,89 +1,71 @@
 # Google Trends Time Series Analysis
 
-Explores correlations between Google search trends and stock prices and unemployment data using resampling and dual-axis Matplotlib visualisations.
+Three economic signals — Tesla stock price, Bitcoin price, and US unemployment — each measured against public search interest from Google Trends across different time frequencies. The analysis asks a simple question: does what people search for reflect, anticipate, or follow what markets and economic indicators actually do?
 
-This project investigates whether public interest — measured by Google Trends search volume — can predict or reflect real-world financial and economic outcomes. Three questions are posed: does Tesla search popularity track its stock price? Does Bitcoin news search volume move in step with its market price? And does the search interest in "unemployment benefits" anticipate or follow the official U.S. unemployment rate reported by the Federal Reserve?
+The core analytical challenge is frequency mismatch. Bitcoin price data arrives daily, while Google Trends search data and unemployment figures are monthly. Comparing them directly is meaningless until the timelines are aligned. The solution is resampling: daily Bitcoin prices are collapsed to month-end values using `.resample('ME').last()`, creating a single unified monthly frequency across all three signal pairs. Rolling average smoothing is applied to unemployment search data to separate the structural trend from seasonal noise.
 
-The datasets come from Google Trends, Yahoo Finance, and the Federal Reserve Economic Data (FRED) service, all pre-downloaded as CSV files. The data spans multiple years and operates at different time frequencies: Tesla and unemployment data are monthly, while Bitcoin price is daily. The core analytical step converts daily Bitcoin prices to monthly frequency using pandas `.resample()`, so that all three comparisons operate on aligned timelines. Additional cleaning includes removing missing values from the Bitcoin price history and converting string date columns to proper datetime objects.
-
-No external APIs or credentials are required. All datasets are committed directly to the repository as seed CSV files and can be loaded with relative paths from the practice notebook.
+The most visually striking finding is the COVID-19 unemployment spike in 2020. Search interest for "unemployment benefits" hit an all-time high simultaneously with the official unemployment rate — compressing a pattern that normally plays out over months into a matter of weeks. Adding the 2020 dataset also exposes a secondary effect: Google Trends normalises index values to 100 within the selected time window, so extending the range rescales all historical values, reshaping the entire pre-2020 baseline.
 
 ---
 
-## Table of Contents
-
-1. [Quick start](#1-quick-start)
-2. [Analysis flow](#2-analysis-flow)
-3. [Features](#3-features)
-4. [Dataset schema](#4-dataset-schema)
-5. [Architecture](#5-architecture)
-6. [Notebook reference](#6-notebook-reference)
-7. [Configuration reference](#7-configuration-reference)
-8. [Course context](#8-course-context)
-9. [Dependencies](#9-dependencies)
-
----
-
-## 1. Quick start
+## Quick Start
 
 ```bash
 git clone https://github.com/xavier-oc-programming/google-trends-time-series-analysis.git
 cd google-trends-time-series-analysis
 pip install -r requirements.txt
-jupyter notebook practice/A_Google_Trends_Analysis.ipynb
+jupyter notebook notebooks/analysis/google_trends_analysis.ipynb
 ```
 
-Open `practice/A_Google_Trends_Analysis.ipynb` first — it contains the full analysis end-to-end. The `theory/` notebooks explain each step individually.
+All datasets are committed to `data/` as CSV files. No API keys or credentials required.
 
 ---
 
-## 2. Analysis flow
+## Analysis Flow
 
 ```
 pipeline
     │
-    │  ── [Ingestion] ────────────────────────────────────────
-    ├── pd.read_csv()  →  tesla_search_trend_vs_price.csv          →  df_tesla
-    ├── pd.read_csv()  →  bitcoin_search_trend.csv                 →  df_btc_search
-    ├── pd.read_csv()  →  daily_bitcoin_price.csv                  →  df_btc_price
+    │  ── [Ingestion] ────────────────────────────────────────────
+    ├── pd.read_csv()  →  tesla_search_trend_vs_price.csv         →  df_tesla
+    ├── pd.read_csv()  →  bitcoin_search_trend.csv                →  df_btc_search
+    ├── pd.read_csv()  →  daily_bitcoin_price.csv                 →  df_btc_price
     ├── pd.read_csv()  →  ue_benefits_search_vs_ue_rate_2004_19.csv  →  df_unemployment
     ├── pd.read_csv()  →  ue_benefits_search_vs_ue_rate_2004_20.csv  →  df_unemployment_2020
     │
-    │  ── [Parsing] ──────────────────────────────────────────
-    ├── pd.to_datetime()          →  convert MONTH / DATE strings to datetime
+    │  ── [Parsing] ──────────────────────────────────────────────
+    ├── pd.to_datetime()           →  convert MONTH / DATE strings to datetime
     │
-    │  ── [Cleaning] ─────────────────────────────────────────
-    ├── .isnull() / .dropna()    →  remove 1 missing row from BTC price data
+    │  ── [Cleaning] ─────────────────────────────────────────────
+    ├── .isnull() / .dropna()     →  remove 1 missing row from BTC price (2020-08-04)
     │
-    │  ── [Resampling] ───────────────────────────────────────
-    ├── .resample('ME').last()   →  collapse daily BTC price to month-end
+    │  ── [Resampling] ────────────────────────────────────────────
+    ├── .resample('ME').last()    →  collapse daily BTC price to month-end
     │
-    │  ── [Smoothing] ────────────────────────────────────────
-    ├── .rolling(window=6).mean() →  6-month average to reduce search noise
+    │  ── [Smoothing] ─────────────────────────────────────────────
+    ├── .rolling(window=6).mean() →  6-month average to reduce unemployment search noise
     │
-    │  ── [Visualisation] ────────────────────────────────────
-    └── matplotlib (twinx)
+    │  ── [Visualisation] ─────────────────────────────────────────
+    └── matplotlib (twinx dual-axis)
             ├── Tesla stock price  vs  Tesla search volume
             ├── Bitcoin monthly price  vs  Bitcoin news search
             ├── U/E rate  vs  unemployment benefits search (2004–2019)
-            ├── U/E rate  vs  rolling 6-month search average
-            └── U/E rate  vs  search (2004–2020, including COVID spike)
+            ├── U/E rate  vs  6-month rolling average search
+            └── U/E rate  vs  search (2004–2020, COVID spike)
 ```
 
 ---
 
-## 3. Features
+## Key Findings
 
-- **Tesla correlation**: Dual-axis line chart overlaying TSLA closing price against Google search popularity, styled with red/blue colour coding.
-- **Bitcoin resampling**: Converts daily price data to month-end frequency so it can be compared directly with the monthly search dataset.
-- **Bitcoin correlation**: Dual-axis chart with a dashed price line and circle markers on the search data.
-- **Unemployment search vs rate**: Dual-axis chart with a grey dashed grid to reveal seasonality in search interest.
-- **Rolling average smoothing**: 6-month rolling mean applied to unemployment search data to expose the underlying trend versus the actual unemployment rate.
-- **COVID shock**: Extended dataset to 2020 shows the unprecedented spike in both search interest and unemployment during the pandemic.
+- **COVID-19 shock (2020)**: The unemployment rate and search interest for "unemployment benefits" spiked simultaneously — the 2020 dataset shows a compression of a pattern that ordinarily unfolds over quarters. Adding 2020 data also rescales the entire 2004–2019 baseline due to Google Trends normalisation within the selected period.
+- **Bitcoin search leads price in some cycles**: Search volume and Bitcoin price move together during peak speculation periods but diverge during consolidation. In several cycles, search interest reached its peak one to two months before price did.
+- **Tesla search tracks news, not earnings**: Tesla search volume spikes align more closely with product announcements and public controversy than with earnings beats. Price movements following strong earnings often show no corresponding search increase.
+- **Rolling average reveals structural unemployment trend**: The 6-month rolling average smooths out the seasonal search spikes and reveals the slower-moving structural employment cycle more clearly than the raw monthly data.
 
 ---
 
-## 4. Dataset schema
+## Dataset Schema
 
 ### `tesla_search_trend_vs_price.csv`
 
@@ -130,95 +112,93 @@ pipeline
 
 ---
 
-## 5. Architecture
+## Architecture
 
 ```
 google-trends-time-series-analysis/
 │
-├── theory/                          # Lesson notebooks — concepts explained
-│   ├── 00__Overview.ipynb           # Day 75 goals and what will be built
-│   ├── 01__Data_Exploration.ipynb   # Shape, dtypes, describe(), periodicity
-│   ├── 02__Data_Cleaning_Resampling.ipynb  # Missing values, to_datetime, resample
-│   ├── 03__Tesla_Line_Charts.ipynb  # Dual-axis line chart for Tesla
-│   ├── 04__Locators_DateFormatters.ipynb   # YearLocator, DateFormatter tick control
-│   ├── 05__Bitcoin_Line_Style.ipynb # Dashed lines, circle markers for Bitcoin
-│   ├── 06__Unemployment_Grids.ipynb # Grid styling for unemployment chart
-│   ├── 07__Unemployment_New_Data.ipynb     # Effect of adding 2020 COVID data
-│   └── 08__Summary.ipynb            # Key learning points recap
-│
-├── practice/
-│   └── A_Google_Trends_Analysis.ipynb  # Student code — full end-to-end analysis
+├── notebooks/
+│   ├── analysis/
+│   │   └── google_trends_analysis.ipynb   # Full end-to-end analysis
+│   └── concepts/                          # Topic notebooks — one concept per file
+│       ├── 00__Overview.ipynb
+│       ├── 01__Data_Exploration.ipynb
+│       ├── 02__Data_Cleaning_Resampling.ipynb
+│       ├── 03__Tesla_Line_Charts.ipynb
+│       ├── 04__Locators_DateFormatters.ipynb
+│       ├── 05__Bitcoin_Line_Style.ipynb
+│       ├── 06__Unemployment_Grids.ipynb
+│       ├── 07__Unemployment_New_Data.ipynb
+│       └── 08__Summary.ipynb
 │
 ├── data/
-│   ├── tesla_search_trend_vs_price.csv         # Tesla monthly search + stock price
-│   ├── bitcoin_search_trend.csv                # Bitcoin monthly news search
-│   ├── daily_bitcoin_price.csv                 # Bitcoin daily OHLCV
-│   ├── ue_benefits_search_vs_ue_rate_2004_19.csv  # Unemployment 2004–2019
-│   └── ue_benefits_search_vs_ue_rate_2004_20.csv  # Unemployment 2004–2020
+│   ├── tesla_search_trend_vs_price.csv
+│   ├── bitcoin_search_trend.csv
+│   ├── daily_bitcoin_price.csv
+│   ├── ue_benefits_search_vs_ue_rate_2004_19.csv
+│   └── ue_benefits_search_vs_ue_rate_2004_20.csv
+│
+├── plots/                                 # Charts saved at 150 dpi
 │
 ├── docs/
-│   └── COURSE_NOTES.md              # Original exercise brief and key concepts
+│   └── COURSE_NOTES.md
 │
-├── requirements.txt                 # Python package dependencies
+├── notebook_web_render/
+│   └── index.html                         # Rendered notebook (GitHub Pages)
+│
+├── .github/
+│   └── workflows/
+│       └── publish_notebook.yml           # Auto-publish on notebook change
+│
+├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 6. Notebook reference
+## Visualisations
 
-### theory/
+Charts are saved to `plots/` at 150 dpi when the analysis notebook is run.
 
-| Notebook | Key methods covered | Question answered |
-|---|---|---|
-| 00__Overview.ipynb | — | What will be built today? |
-| 01__Data_Exploration.ipynb | `.shape`, `.describe()`, `.info()`, `.min()`, `.max()` | What does each dataset look like? What is the periodicity? |
-| 02__Data_Cleaning_Resampling.ipynb | `.isnull()`, `.dropna()`, `pd.to_datetime()`, `.resample('ME').last()` | How do we align daily and monthly data? |
-| 03__Tesla_Line_Charts.ipynb | `plt.figure()`, `twinx()`, `.plot()`, `.set_ylabel()`, `.set_xlim()` | How do you plot two scales on one chart? |
-| 04__Locators_DateFormatters.ipynb | `mdates.YearLocator()`, `mdates.MonthLocator()`, `mdates.DateFormatter()` | How do you control x-axis tick marks on a time series? |
-| 05__Bitcoin_Line_Style.ipynb | `linestyle='--'`, `marker='o'` | How do line style and markers aid readability? |
-| 06__Unemployment_Grids.ipynb | `ax.grid(color=, linestyle=, alpha=)` | How do grids help read data across a long time axis? |
-| 07__Unemployment_New_Data.ipynb | `.read_csv()`, `.to_datetime()` | How does new data (2020 COVID spike) reshape the chart? |
-| 08__Summary.ipynb | — | What are the key takeaways from Day 75? |
-
-### practice/
-
-| Notebook | Key methods covered | Question answered |
-|---|---|---|
-| A_Google_Trends_Analysis.ipynb | All of the above | Does search volume correlate with Tesla price, Bitcoin price, or the U.S. unemployment rate? |
+| File | Description |
+|---|---|
+| `tesla_price_vs_search.png` | Dual-axis: TSLA closing price (red) vs Google search volume (blue), 2010–2021 |
+| `bitcoin_price_vs_search.png` | Dual-axis: BTC month-end price (orange dashed) vs Bitcoin news search (blue circles), 2014–2020 |
+| `unemployment_search_vs_rate_2004_19.png` | Dual-axis: U/E rate (purple dashed) vs "unemployment benefits" search (blue), with grey grid, 2004–2019 |
+| `unemployment_rolling_avg.png` | Dual-axis: U/E rate (red) vs 6-month rolling average search (steel blue dashed), 2004–2019 |
+| `unemployment_with_2020.png` | Dual-axis: U/E rate (red) vs search (grey dashed), 2004–2020, showing COVID spike |
 
 ---
 
-## 7. Configuration reference
+## Operations Reference
 
 | Value | Location | Description |
 |---|---|---|
-| `../data/tesla_search_trend_vs_price.csv` | `practice/A_Google_Trends_Analysis.ipynb` | Relative path to Tesla dataset |
-| `../data/bitcoin_search_trend.csv` | `practice/A_Google_Trends_Analysis.ipynb` | Relative path to Bitcoin search dataset |
-| `../data/daily_bitcoin_price.csv` | `practice/A_Google_Trends_Analysis.ipynb` | Relative path to Bitcoin price dataset |
-| `../data/ue_benefits_search_vs_ue_rate_2004_19.csv` | `practice/A_Google_Trends_Analysis.ipynb` | Relative path to 2004–2019 unemployment dataset |
-| `../data/ue_benefits_search_vs_ue_rate_2004_20.csv` | `practice/A_Google_Trends_Analysis.ipynb` | Relative path to 2004–2020 unemployment dataset |
-| `figsize=(14, 8), dpi=120` | All chart cells | Figure size and resolution |
-| `resample('ME')` | Cleaning notebook | Month-end resampling alias |
-| `rolling(window=6)` | Unemployment notebook | 6-month rolling average window |
-| `{:,.2f}` | Import cell | Float display format for pandas |
+| `../../data/tesla_search_trend_vs_price.csv` | `notebooks/analysis/google_trends_analysis.ipynb` | Relative path to Tesla dataset |
+| `../../data/bitcoin_search_trend.csv` | `notebooks/analysis/google_trends_analysis.ipynb` | Relative path to Bitcoin search dataset |
+| `../../data/daily_bitcoin_price.csv` | `notebooks/analysis/google_trends_analysis.ipynb` | Relative path to Bitcoin price dataset |
+| `../../data/ue_benefits_search_vs_ue_rate_2004_19.csv` | `notebooks/analysis/google_trends_analysis.ipynb` | Relative path to 2004–2019 unemployment dataset |
+| `../../data/ue_benefits_search_vs_ue_rate_2004_20.csv` | `notebooks/analysis/google_trends_analysis.ipynb` | Relative path to 2004–2020 unemployment dataset |
+| `figsize=(14, 8), dpi=120` | All chart cells | Figure size and inline display resolution |
+| `dpi=150` | `plt.savefig()` calls | Resolution for saved chart files |
+| `resample('ME')` | Cleaning section | Month-end resampling alias |
+| `rolling(window=6)` | Unemployment section | 6-month rolling average window |
 
 ---
 
-## 8. Course context
+## Background
 
-100 Days of Code: The Complete Python Pro Bootcamp — Day 75: Google Trends, Data Resampling and Visualising Time Series.  
-See [docs/COURSE_NOTES.md](docs/COURSE_NOTES.md) for the full exercise brief and concept explanations.
+This project was built as part of a structured Python data analysis curriculum covering time series resampling and Matplotlib dual-axis visualisation. Full context and concept notes are in [docs/COURSE_NOTES.md](docs/COURSE_NOTES.md).
 
 ---
 
-## 9. Dependencies
+## Dependencies
 
 | Module | Used in | Purpose |
 |---|---|---|
 | `pandas` | All notebooks | DataFrame operations, `to_datetime`, `resample`, `rolling` |
-| `matplotlib` | theory/03–07, practice | Line charts, dual-axis plots, figure styling |
-| `matplotlib.dates` | theory/04, practice | `YearLocator`, `MonthLocator`, `DateFormatter` for x-axis ticks |
+| `matplotlib` | concepts/03–07, analysis | Line charts, dual-axis plots, figure styling |
+| `matplotlib.dates` | concepts/04, analysis | `YearLocator`, `MonthLocator`, `DateFormatter` for x-axis ticks |
 | `numpy` | Implicit via pandas | Numerical operations |
 | `notebook` | All `.ipynb` files | Jupyter notebook runtime |
