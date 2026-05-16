@@ -1,5 +1,12 @@
 # Google Trends Time Series Analysis
 
+![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)
+![pandas](https://img.shields.io/badge/pandas-2.x-150458?logo=pandas)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-3.x-blue)
+![Jupyter](https://img.shields.io/badge/Jupyter-notebook-orange?logo=jupyter)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%2FCD-2088FF?logo=githubactions&logoColor=white)
+![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-222222?logo=github)
+
 Three economic signals — Tesla stock price, Bitcoin price, and US unemployment — each measured against public search interest from Google Trends across different time frequencies. The analysis asks a simple question: does what people search for reflect, anticipate, or follow what markets and economic indicators actually do?
 
 The core analytical challenge is frequency mismatch. Bitcoin price data arrives daily, while Google Trends search data and unemployment figures are monthly. Comparing them directly is meaningless until the timelines are aligned. The solution is resampling: daily Bitcoin prices are collapsed to month-end values using `.resample('ME').last()`, creating a single unified monthly frequency across all three signal pairs. Rolling average smoothing is applied to unemployment search data to separate the structural trend from seasonal noise.
